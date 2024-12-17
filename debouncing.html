@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debounce Search Example</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+        
+        #input {
+            width: 300px;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #d1d1d1;
+            border-radius: 4px;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        
+        #input:focus {
+            border-color: #ff9900;
+        }
+        
+        #suggestions {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            position: absolute;
+            width: 300px;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        #suggestions li {
+            padding: 10px;
+            font-size: 14px;
+            color: #333;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        
+        #suggestions li:hover {
+            background-color: #f1f1f1;
+        }
+        
+        #suggestions li:active {
+            background-color: #e0e0e0;
+        }
+
+        #suggestions .no-result {
+            font-style: italic;
+            color: #888;
+            text-align: center;
+            padding: 10px;
+        }
+
+        #suggestions li.selected {
+            background-color: #ff9900;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <input type="text" id="input" placeholder="Search for products..." />
+    <ul id="suggestions"></ul>
+
+    <script>
+        const input = document.getElementById("input");
+        const suggestionsList = document.getElementById("suggestions");
+
+        // Debounce function
+        function debounce(func, delay) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    func(...args);
+                }, delay);
+            };
+        }
+
+        // Function to fetch products and display suggestions
+        function myFunction(e) {
+            const query = e.target.value;
+            
+            // If the query is empty, clear the suggestions
+            if (query.trim() === "") {
+                suggestionsList.innerHTML = '';
+                return;
+            }
+            
+            fetch(`https://fakestoreapi.com/products/category/${query}`)
+                .then(res => res.json())
+                .then(json => {
+                    // Clear previous suggestions
+                    suggestionsList.innerHTML = '';
+                    
+                    // Check if there are any products
+                    if (json.length > 0) {
+                        json.forEach(product => {
+                            const li = document.createElement('li');
+                            li.textContent = product.title;
+                            li.onclick = () => {
+                                input.value = product.title; // Optional: set the input value to the clicked suggestion
+                                suggestionsList.innerHTML = ''; // Clear suggestions after selection
+                            };
+                            suggestionsList.appendChild(li);
+                        });
+                    } else {
+                        // If no products found, show a "No results" message
+                        const li = document.createElement('li');
+                        li.textContent = 'No results found';
+                        li.classList.add('no-result');
+                        suggestionsList.appendChild(li);
+                    }
+                })
+                .catch(err => {
+                    console.error('Error fetching products:', err);
+                    suggestionsList.innerHTML = '<li class="no-result">Error loading results</li>';
+                });
+        }
+
+        // Attach the debounce and input event listener to the input field
+        input.addEventListener("input", debounce(myFunction, 1000));
+    </script>
+
+</body>
+</html>
